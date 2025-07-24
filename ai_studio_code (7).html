@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XVI EAC - Organizador Central</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Biblioteca para "Arrastar e Soltar" -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        :root {
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        [data-theme="dark"] {
+            --background: #020617;
+            --card-bg: #0f172a;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .container { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
+        
+        .motto-container {
+            margin-top: 12px; padding: 12px; border-radius: 8px;
+            transition: var(--transition); position: relative; cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .motto-container:hover { background-color: var(--card-bg); border-color: var(--border-color); }
+        #motto-text { font-size: 1.1rem; font-style: italic; color: var(--text-secondary); min-height: 26px; }
+        
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 10px;
+        }
+        
+        #search-filter {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        #search-filter:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+
+        .theme-switch { cursor: pointer; background: none; border: none; color: var(--text-secondary); flex-shrink: 0; }
+        .theme-switch .icon { width: 22px; height: 22px; transition: var(--transition); }
+        .theme-switch:hover { color: var(--accent); }
+
+        /* CORREÇÃO DEFINITIVA DO ÍCONE DE TEMA */
+        .theme-switch .icon-sun, .theme-switch .icon-moon { display: none; }
+        body[data-theme="light"] .theme-switch .icon-moon { display: block; }
+        body[data-theme="dark"] .theme-switch .icon-sun { display: block; }
+        
+        .items-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .item-card {
+            background: var(--card-bg); border-radius: var(--border-radius); padding: 16px;
+            display: flex; gap: 16px; align-items: center; transition: var(--transition);
+            position: relative; border: 1px solid var(--border-color);
+            cursor: grab;
+        }
+        .item-card:active { cursor: grabbing; }
+        .item-card.sortable-ghost { opacity: 0.4; background: var(--accent); }
+        
+        .item-card.is-link { text-decoration: none; }
+        .item-card.is-link:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+        
+        .item-icon-container { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 8px; background-color: var(--background); color: var(--text-secondary); }
+        .item-icon-container .icon { width: 22px; height: 22px; }
+        
+        .item-content { flex-grow: 1; overflow: hidden; pointer-events: none; } /* Desativa ponteiro para facilitar o arrastar */
+        .item-content h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-content p { font-size: 0.85rem; color: var(--text-secondary); white-space: pre-wrap; word-wrap: break-word; }
+
+        .item-actions { display: flex; gap: 8px; }
+        .action-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+        .action-btn:hover { color: var(--text-primary); background: var(--background); }
+        .action-btn .icon { width: 18px; height: 18px; }
+
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 56px; height: 56px; background: var(--accent); color: white; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); cursor: pointer; transition: var(--transition); z-index: 1000; }
+        .fab:hover { background: var(--accent-hover); transform: scale(1.05) rotate(15deg); }
+        .fab .icon { width: 24px; height: 24px; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 450px; box-shadow: var(--shadow-lg); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        .modal-content h2 { font-size: 1.5rem; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--background); color: var(--text-primary); font-family: 'Poppins', sans-serif; font-size: 1rem; transition: var(--transition); }
+        .form-group textarea { min-height: 90px; resize: vertical; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+        #url-group { display: none; }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; transition: var(--transition); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--background); color: var(--text-primary); }
+
+        #choice-modal .modal-content { max-width: 320px; text-align: center; }
+        .choice-buttons { display: flex; gap: 15px; margin-top: 25px; }
+        .choice-btn { flex: 1; padding: 16px; font-size: 1rem; }
+        .choice-btn .icon { width: 22px; height: 22px; margin: 0 auto 8px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        <symbol id="icon-plus" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15m7.5-7.5h-15" /></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></symbol>
+        <symbol id="icon-delete" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.067-2.09 1.02-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-6.364-.386 1.591-1.591M3 12h2.25m.386-6.364 1.591 1.591M12 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z" /></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></symbol>
+        <symbol id="icon-note" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></symbol>
+    </svg>
+
+    <div class="container">
+        <header>
+            <h1>XVI EAC</h1>
+            <div class="motto-container" id="motto-editor" title="Clique para editar a frase"><p id="motto-text"></p></div>
+        </header>
+
+        <div class="controls-container">
+            <input type="search" id="search-filter" placeholder="Pesquisar por título ou nota...">
+            <button class="theme-switch" id="theme-switch" title="Mudar Tema"><svg class="icon icon-sun"><use href="#icon-sun"></use></svg><svg class="icon icon-moon"><use href="#icon-moon"></use></svg></button>
+        </div>
+
+        <main class="items-grid" id="items-grid"></main>
+    </div>
+
+    <button class="fab" id="add-item-btn" title="Adicionar Novo Item"><svg class="icon"><use href="#icon-plus"></use></svg></button>
+
+    <div class="modal-overlay" id="choice-modal">
+        <div class="modal-content">
+            <h2>O que deseja adicionar?</h2>
+            <div class="choice-buttons">
+                <button id="add-as-link" class="btn btn-primary choice-btn"><svg class="icon"><use href="#icon-link"></use></svg>Link</button>
+                <button id="add-as-note" class="btn btn-secondary choice-btn"><svg class="icon"><use href="#icon-note"></use></svg>Nota</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="form-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Adicionar Item</h2>
+            <form id="item-form">
+                <input type="hidden" id="item-id">
+                <div class="form-group"><label for="item-title">Título</label><input type="text" id="item-title"></div>
+                <div class="form-group" id="url-group"><label for="item-url">URL do Link</label><input type="url" id="item-url" placeholder="https://..."></div>
+                <div class="form-group"><label for="item-note">Descrição / Nota</label><textarea id="item-note"></textarea></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, updateDoc, serverTimestamp, getDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCIX7hEmpRZacxbzIxUOzKMuu4l0lXBTQQ", authDomain: "xvi-eac.firebaseapp.com", projectId: "xvi-eac", storageBucket: "xvi-eac.appspot.com", messagingSenderId: "340488873046", appId: "1:340488873046:web:ddc2c775fe977c4d6487f7" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentItemType = 'link';
+        const dom = { body: document.body, itemsGrid: document.getElementById('items-grid'), addItemBtn: document.getElementById('add-item-btn'), choiceModal: document.getElementById('choice-modal'), formModal: document.getElementById('form-modal'), itemForm: document.getElementById('item-form'), modalTitle: document.getElementById('modal-title'), urlGroup: document.getElementById('url-group'), cancelBtn: document.getElementById('cancel-btn'), themeSwitch: document.getElementById('theme-switch'), mottoText: document.getElementById('motto-text'), mottoEditor: document.getElementById('motto-editor'), searchFilter: document.getElementById('search-filter') };
+
+        const renderItem = (doc) => {
+            const item = doc.data();
+            const tag = item.type === 'link' && item.url ? 'a' : 'div';
+            const card = document.createElement(tag);
+            card.className = `item-card is-${item.type}`;
+            card.dataset.id = doc.id;
+            if (tag === 'a') { card.href = item.url; card.target = '_blank'; card.rel = 'noopener noreferrer'; }
+            card.innerHTML = `
+                <div class="item-icon-container"><svg class="icon"><use href="#icon-${item.type}"></use></svg></div>
+                <div class="item-content"><h3>${item.title || 'Sem título'}</h3><p>${item.note || ''}</p></div>
+                <div class="item-actions">
+                    <button class="action-btn edit-btn" title="Editar"><svg class="icon"><use href="#icon-edit"></use></svg></button>
+                    <button class="action-btn delete-btn" title="Excluir"><svg class="icon"><use href="#icon-delete"></use></svg></button>
+                </div>`;
+            dom.itemsGrid.appendChild(card);
+            card.querySelector('.edit-btn').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openFormModal('edit', doc); });
+            card.querySelector('.delete-btn').addEventListener('click', async (e) => { e.preventDefault(); e.stopPropagation(); if (confirm(`Excluir "${item.title || 'item'}"?`)) await deleteItem(doc.id); });
+        };
+
+        const fetchAll = async () => {
+            dom.itemsGrid.innerHTML = '';
+            dom.mottoText.textContent = 'Carregando...';
+            try {
+                const [itemsSnap, mottoSnap] = await Promise.all([getDocs(collection(db, "items")), getDoc(doc(db, "config", "motto"))]);
+                if (mottoSnap.exists() && mottoSnap.data().text) dom.mottoText.textContent = `“${mottoSnap.data().text}”`; else dom.mottoText.textContent = "Clique para definir a frase guia...";
+                if (itemsSnap.empty) { dom.itemsGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Clique no botão + para começar a organizar.</p>'; return; }
+                
+                // Ordena os documentos por 'position', e se não existir, por data de criação
+                const sortedDocs = itemsSnap.docs.sort((a,b) => (a.data().position ?? Infinity) - (b.data().position ?? Infinity) || (b.data().createdAt?.seconds ?? 0) - (a.data().createdAt?.seconds ?? 0));
+                sortedDocs.forEach(renderItem);
+            } catch (error) { console.error("Erro ao buscar dados:", error); dom.itemsGrid.innerHTML = "<p>Ocorreu um erro ao carregar os dados.</p>"; dom.mottoText.textContent = "Não foi possível carregar a frase." }
+        };
+
+        const updateMotto = async () => {
+            const currentMotto = dom.mottoText.textContent.replaceAll('“', '').replaceAll('”', '');
+            const newMotto = prompt("Digite a nova frase guia:", currentMotto.includes('Clique') ? '' : currentMotto);
+            if (newMotto !== null && newMotto.trim() !== '') {
+                try { await setDoc(doc(db, "config", "motto"), { text: newMotto }); dom.mottoText.textContent = `“${newMotto}”`; } 
+                catch (error) { console.error("Erro ao salvar frase:", error); alert("Não foi possível salvar a frase."); }
+            }
+        };
+
+        const openFormModal = (mode = 'add', docToEdit = null) => {
+            dom.itemForm.reset();
+            dom.urlGroup.style.display = currentItemType === 'link' ? 'block' : 'none';
+            if (mode === 'edit' && docToEdit) {
+                const item = docToEdit.data();
+                currentItemType = item.type;
+                dom.urlGroup.style.display = currentItemType === 'link' ? 'block' : 'none';
+                dom.modalTitle.textContent = `Editar ${currentItemType === 'link' ? 'Link' : 'Nota'}`;
+                dom.itemForm.elements['item-id'].value = docToEdit.id;
+                dom.itemForm.elements['item-title'].value = item.title || '';
+                dom.itemForm.elements['item-url'].value = item.url || '';
+                dom.itemForm.elements['item-note'].value = item.note || '';
+            } else {
+                dom.modalTitle.textContent = `Adicionar ${currentItemType === 'link' ? 'Novo Link' : 'Nova Nota'}`;
+                dom.itemForm.elements['item-id'].value = '';
+            }
+            dom.formModal.classList.add('active');
+        };
+
+        const closeModal = (modal) => modal.classList.remove('active');
+
+        const saveItem = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('item-id').value;
+            const itemData = { type: currentItemType, title: dom.itemForm.elements['item-title'].value, url: dom.itemForm.elements['item-url'].value, note: dom.itemForm.elements['item-note'].value };
+            try {
+                if (id) {
+                    await updateDoc(doc(db, "items", id), itemData);
+                } else {
+                    itemData.createdAt = serverTimestamp();
+                    itemData.position = dom.itemsGrid.children.length; // Adiciona no final da lista
+                    await addDoc(collection(db, "items"), itemData);
+                }
+                closeModal(dom.formModal); fetchAll();
+            } catch (error) { console.error("Erro ao salvar item:", error); }
+        };
+
+        const deleteItem = async (id) => { try { await deleteDoc(doc(db, "items", id)); fetchAll(); } catch (error) { console.error("Erro ao deletar item:", error); } };
+        
+        const applyTheme = (theme) => { dom.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); };
+
+        const filterItems = () => {
+            const query = dom.searchFilter.value.toLowerCase();
+            document.querySelectorAll('.item-card').forEach(card => {
+                const content = card.textContent.toLowerCase();
+                card.style.display = content.includes(query) ? 'flex' : 'none';
+            });
+        };
+
+        const updateOrderInFirestore = async () => {
+            const batch = writeBatch(db);
+            const cards = dom.itemsGrid.querySelectorAll('.item-card');
+            cards.forEach((card, index) => {
+                const docRef = doc(db, 'items', card.dataset.id);
+                batch.update(docRef, { position: index });
+            });
+            await batch.commit();
+        };
+
+        // --- Event Listeners ---
+        dom.themeSwitch.addEventListener('click', () => applyTheme(dom.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'));
+        dom.addItemBtn.addEventListener('click', () => dom.choiceModal.classList.add('active'));
+        document.getElementById('add-as-link').addEventListener('click', () => { currentItemType = 'link'; closeModal(dom.choiceModal); openFormModal('add'); });
+        document.getElementById('add-as-note').addEventListener('click', () => { currentItemType = 'note'; closeModal(dom.choiceModal); openFormModal('add'); });
+        dom.cancelBtn.addEventListener('click', () => closeModal(dom.formModal));
+        [dom.formModal, dom.choiceModal].forEach(modal => modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); }));
+        dom.itemForm.addEventListener('submit', saveItem);
+        dom.mottoEditor.addEventListener('click', updateMotto);
+        dom.searchFilter.addEventListener('input', filterItems);
+        
+        // --- Inicialização ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            applyTheme(localStorage.getItem('theme') || 'light');
+            await fetchAll();
+
+            // Inicializa a funcionalidade de arrastar e soltar
+            new Sortable(dom.itemsGrid, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: updateOrderInFirestore
+            });
+        });
+    </script>
+</body>
+</html>
